@@ -1,6 +1,8 @@
-# Security Review
+---
+description: Perform a comprehensive security review
+---
 
-## Overview
+# Security Review
 
 Perform a comprehensive security review of the current code and provide specific remediation steps with code examples for each security issue identified.
 

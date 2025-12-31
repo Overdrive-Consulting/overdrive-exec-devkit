@@ -1,6 +1,9 @@
-# Add Documentation
+---
+description: Add comprehensive documentation for code/features
+argument-hint: [file-or-feature]
+---
 
-## Overview
+# Add Documentation
 
 Add comprehensive documentation for the current code/feature and format it according to the project's documentation standards, including it in the appropriate location (README, docs folder, or inline comments).
 
@@ -24,7 +27,7 @@ Add comprehensive documentation for the current code/feature and format it accor
     - Best practices and patterns
     - Common pitfalls to avoid
 
-## Add Documentation Checklist
+## Checklist
 
 - [ ] Explained what this code/feature does
 - [ ] Documented why it exists and its purpose
@@ -36,5 +39,3 @@ Add comprehensive documentation for the current code/feature and format it accor
 - [ ] Provided architecture overview
 - [ ] Documented important design decisions
 - [ ] Included common use cases with full examples
-- [ ] Documented best practices and patterns
-- [ ] Documented common pitfalls to avoid

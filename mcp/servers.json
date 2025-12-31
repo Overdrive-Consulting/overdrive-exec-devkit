@@ -1,0 +1,24 @@
+{
+  "context7": {
+    "name": "Context7",
+    "description": "Up-to-date documentation lookup for any library. Say 'use context7' in prompts.",
+    "command": "npx",
+    "args": ["-y", "@upstash/context7-mcp@latest"],
+    "env": {}
+  },
+  "exa": {
+    "name": "Exa",
+    "description": "Web search, code context, and research tools powered by Exa AI.",
+    "url": "https://mcp.exa.ai/mcp",
+    "env": {}
+  },
+  "supabase": {
+    "name": "Supabase",
+    "description": "Database operations and management via Supabase.",
+    "command": "npx",
+    "args": ["-y", "@supabase/mcp-server-supabase"],
+    "env": {
+      "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+    }
+  }
+}

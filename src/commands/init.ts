@@ -1,0 +1,247 @@
+import * as p from "@clack/prompts";
+import pc from "picocolors";
+import { printBanner, printSuccess, printInfo } from "../utils/ui";
+import { getMcpServerOptions, installMcpServers } from "../installers/mcp";
+import { getCommandOptions, getSkillOptions, installClaude } from "../installers/claude";
+import { installCursor } from "../installers/cursor";
+import { installBeads } from "../installers/beads";
+import { getRuleOptions, installRules } from "../installers/rules";
+
+export async function runInit() {
+  printBanner();
+
+  const targetDir = process.cwd();
+
+  // Step 1: Select AI tools
+  const tools = await p.multiselect({
+    message: "Which AI tools do you want to configure?",
+    options: [
+      {
+        value: "claude",
+        label: "Claude Code",
+        hint: "Commands, skills, MCP servers, settings",
+      },
+      {
+        value: "cursor",
+        label: "Cursor",
+        hint: "Commands, MCP servers, rules",
+      },
+    ],
+    required: true,
+  });
+
+  if (p.isCancel(tools)) {
+    p.cancel("Setup cancelled");
+    process.exit(0);
+  }
+
+  const forClaude = (tools as string[]).includes("claude");
+  const forCursor = (tools as string[]).includes("cursor");
+
+  // Step 2: Select MCP servers
+  const mcpOptions = getMcpServerOptions();
+  const mcpServers = await p.multiselect({
+    message: "Which MCP servers do you want to add?",
+    options: mcpOptions.map(opt => ({
+      value: opt.value,
+      label: opt.label,
+      hint: opt.hint,
+    })),
+    required: false,
+  });
+
+  if (p.isCancel(mcpServers)) {
+    p.cancel("Setup cancelled");
+    process.exit(0);
+  }
+
+  // Step 3: Select skills (if Claude selected)
+  let selectedSkills: string[] = [];
+  if (forClaude) {
+    const skillOptions = getSkillOptions();
+    if (skillOptions.length > 0) {
+      const skills = await p.multiselect({
+        message: "Which skills do you want to install?",
+        options: skillOptions.map(opt => ({
+          value: opt.value,
+          label: opt.label,
+          hint: opt.hint,
+        })),
+        required: false,
+      });
+
+      if (p.isCancel(skills)) {
+        p.cancel("Setup cancelled");
+        process.exit(0);
+      }
+
+      selectedSkills = skills as string[];
+    }
+  }
+
+  // Step 4: Select commands
+  const commandOptions = getCommandOptions();
+  const commands = await p.multiselect({
+    message: "Which commands do you want to install?",
+    options: commandOptions.map(opt => ({
+      value: opt.value,
+      label: `/${opt.label}`,
+      hint: opt.hint,
+    })),
+    required: false,
+  });
+
+  if (p.isCancel(commands)) {
+    p.cancel("Setup cancelled");
+    process.exit(0);
+  }
+
+  const selectedCommands = commands as string[];
+
+  // Step 5: Select rules (for both Claude and Cursor)
+  let selectedRules: string[] = [];
+  const ruleOptions = getRuleOptions();
+  if (ruleOptions.length > 0) {
+    const rules = await p.multiselect({
+      message: "Which rules do you want to install?",
+      options: ruleOptions.map(opt => ({
+        value: opt.value,
+        label: opt.label,
+        hint: opt.hint,
+      })),
+      required: false,
+    });
+
+    if (p.isCancel(rules)) {
+      p.cancel("Setup cancelled");
+      process.exit(0);
+    }
+
+    selectedRules = rules as string[];
+  }
+
+  // Step 6: Beads setup
+  const beadsChoice = await p.select({
+    message: "Set up beads (issue tracker for AI agents)?",
+    options: [
+      {
+        value: "full",
+        label: "Full CLI + Integration (Recommended)",
+        hint: "Install bd binary, init beads, configure hooks",
+      },
+      {
+        value: "mcp",
+        label: "MCP Server Only",
+        hint: "Just configure beads-mcp, install bd manually",
+      },
+      {
+        value: "skip",
+        label: "Skip",
+        hint: "Don't set up beads",
+      },
+    ],
+  });
+
+  if (p.isCancel(beadsChoice)) {
+    p.cancel("Setup cancelled");
+    process.exit(0);
+  }
+
+  // Step 6: Confirmation
+  console.log("");
+  printInfo("Summary:");
+  console.log(pc.dim("  Target: ") + targetDir);
+  console.log(pc.dim("  Tools: ") + (tools as string[]).join(", "));
+  if ((mcpServers as string[]).length > 0) {
+    console.log(pc.dim("  MCP: ") + (mcpServers as string[]).join(", "));
+  }
+  if (selectedSkills.length > 0) {
+    console.log(pc.dim("  Skills: ") + selectedSkills.join(", "));
+  }
+  if (selectedCommands.length > 0) {
+    console.log(pc.dim("  Commands: ") + selectedCommands.map(c => `/${c}`).join(", "));
+  }
+  if (selectedRules.length > 0) {
+    console.log(pc.dim("  Rules: ") + selectedRules.join(", "));
+  }
+  console.log(pc.dim("  Beads: ") + beadsChoice);
+  console.log("");
+
+  const confirm = await p.confirm({
+    message: "Proceed with installation?",
+  });
+
+  if (p.isCancel(confirm) || !confirm) {
+    p.cancel("Setup cancelled");
+    process.exit(0);
+  }
+
+  // Execute installation
+  console.log("");
+
+  const spinner = p.spinner();
+
+  // Install MCP servers
+  if ((mcpServers as string[]).length > 0) {
+    spinner.start("Installing MCP servers...");
+    installMcpServers({
+      targetDir,
+      serverKeys: mcpServers as string[],
+      forClaude,
+      forCursor,
+    });
+    spinner.stop("MCP servers configured");
+  }
+
+  // Install Claude components
+  if (forClaude) {
+    spinner.start("Installing Claude Code components...");
+    installClaude({
+      targetDir,
+      commands: selectedCommands,
+      skills: selectedSkills,
+    });
+    spinner.stop("Claude Code configured");
+  }
+
+  // Install Cursor components
+  if (forCursor) {
+    spinner.start("Installing Cursor components...");
+    installCursor({
+      targetDir,
+      commands: selectedCommands,
+    });
+    spinner.stop("Cursor configured");
+  }
+
+  // Install rules (for both Claude and Cursor)
+  if (selectedRules.length > 0) {
+    spinner.start("Installing rules...");
+    installRules({
+      targetDir,
+      rules: selectedRules,
+      forClaude,
+      forCursor,
+    });
+    spinner.stop("Rules configured");
+  }
+
+  // Install beads
+  if (beadsChoice !== "skip") {
+    spinner.start("Setting up beads...");
+    await installBeads({
+      targetDir,
+      mode: beadsChoice as "full" | "mcp",
+      forClaude,
+      forCursor,
+    });
+    spinner.stop("Beads configured");
+  }
+
+  console.log("");
+  printSuccess("AI DevKit setup complete!");
+
+  if ((mcpServers as string[]).includes("supabase")) {
+    printInfo("Don't forget to set SUPABASE_ACCESS_TOKEN in your environment");
+  }
+}

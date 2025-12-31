@@ -1,7 +1,9 @@
 
 # Package Management with `uv`
 
-These rules define strict guidelines for managing Python dependencies in this project using the `uv` dependency manager.
+**If this project uses `uv`, then always use `uv`.**
+
+These rules apply when `uv` is detected or used in the project. When `uv` is present, follow these strict guidelines for managing Python dependencies.
 
 **✅ Use `uv` exclusively**
 

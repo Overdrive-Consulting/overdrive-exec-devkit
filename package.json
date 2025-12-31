@@ -1,9 +1,19 @@
 {
   "name": "ai-devkit",
-  "module": "index.ts",
+  "version": "0.1.0",
+  "description": "Bootstrap AI coding tools (Claude Code + Cursor) into your projects",
   "type": "module",
+  "bin": {
+    "adk": "./src/cli.ts"
+  },
+  "scripts": {
+    "dev": "bun run src/cli.ts",
+    "build": "bun build src/cli.ts --outdir dist --target node",
+    "typecheck": "tsc --noEmit"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/gradient-string": "^1.1.6"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -12,6 +22,7 @@
     "@clack/core": "^0.5.0",
     "@clack/prompts": "^0.11.0",
     "consola": "^3.4.2",
+    "execa": "^9.6.1",
     "gradient-string": "^3.0.0",
     "picocolors": "^1.1.1",
     "tinyglobby": "^0.2.15",
