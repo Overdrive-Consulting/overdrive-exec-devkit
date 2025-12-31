@@ -1,0 +1,1 @@
+One repo to bootstrap your AI coding environment MCP servers, AI Productivity tools, Cursor rules, Claude Code Skills, and an interactive CLI to get every engineer shipping faster.
