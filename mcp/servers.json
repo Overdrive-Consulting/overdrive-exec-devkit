@@ -20,5 +20,30 @@
     "env": {
       "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
     }
+  },
+  "morph": {
+    "name": "Morph",
+    "description": "Fast codebase search via WarpGrep (20x faster than grep). Required for /morph-search skill.",
+    "command": "npx",
+    "args": ["-y", "@morphllm/morphmcp"],
+    "env": {
+      "MORPH_API_KEY": "${MORPH_API_KEY}"
+    }
+  },
+  "ast-grep": {
+    "name": "AST-Grep",
+    "description": "AST-based code search and refactoring. Required for /ast-grep-find skill.",
+    "command": "npx",
+    "args": ["-y", "@anthropic/mcp-ast-grep"],
+    "env": {}
+  },
+  "perplexity": {
+    "name": "Perplexity",
+    "description": "AI-powered web search, research, and chain-of-thought reasoning.",
+    "command": "npx",
+    "args": ["-y", "@perplexity-ai/mcp-server"],
+    "env": {
+      "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}"
+    }
   }
 }

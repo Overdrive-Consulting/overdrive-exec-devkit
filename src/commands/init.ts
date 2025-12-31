@@ -1,14 +1,15 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { printBanner, printSuccess, printInfo } from "../utils/ui";
+import { printBanner, printSuccess, printInfo, printSuccessBox } from "../utils/ui";
 import { getMcpServerOptions, installMcpServers } from "../installers/mcp";
 import { getCommandOptions, getSkillOptions, installClaude } from "../installers/claude";
 import { installCursor } from "../installers/cursor";
 import { installBeads } from "../installers/beads";
 import { getRuleOptions, installRules } from "../installers/rules";
+import { installContinuousClaude } from "../installers/continuous-claude";
 
 export async function runInit() {
-  printBanner();
+  await printBanner();
 
   const targetDir = process.cwd();
 
@@ -147,7 +148,39 @@ export async function runInit() {
     process.exit(0);
   }
 
-  // Step 6: Confirmation
+  // Step 7: Continuous Claude setup (if Claude selected)
+  let continuousClaudeChoice: string = "skip";
+  if (forClaude) {
+    const ccChoice = await p.select({
+      message: "Set up Continuous Claude (session continuity & advanced skills)?",
+      options: [
+        {
+          value: "full",
+          label: "Full Setup (Recommended)",
+          hint: "Global install + project init (thoughts/, ledgers, handoffs)",
+        },
+        {
+          value: "project",
+          label: "Project Only",
+          hint: "Just init project structure (requires global install)",
+        },
+        {
+          value: "skip",
+          label: "Skip",
+          hint: "Don't set up Continuous Claude",
+        },
+      ],
+    });
+
+    if (p.isCancel(ccChoice)) {
+      p.cancel("Setup cancelled");
+      process.exit(0);
+    }
+
+    continuousClaudeChoice = ccChoice as string;
+  }
+
+  // Step 8: Confirmation
   console.log("");
   printInfo("Summary:");
   console.log(pc.dim("  Target: ") + targetDir);
@@ -165,6 +198,9 @@ export async function runInit() {
     console.log(pc.dim("  Rules: ") + selectedRules.join(", "));
   }
   console.log(pc.dim("  Beads: ") + beadsChoice);
+  if (forClaude) {
+    console.log(pc.dim("  Continuous Claude: ") + continuousClaudeChoice);
+  }
   console.log("");
 
   const confirm = await p.confirm({
@@ -238,10 +274,23 @@ export async function runInit() {
     spinner.stop("Beads configured");
   }
 
-  console.log("");
-  printSuccess("AI DevKit setup complete!");
-
-  if ((mcpServers as string[]).includes("supabase")) {
-    printInfo("Don't forget to set SUPABASE_ACCESS_TOKEN in your environment");
+  // Install continuous-claude
+  if (continuousClaudeChoice !== "skip" && forClaude) {
+    spinner.start("Setting up Continuous Claude...");
+    await installContinuousClaude({
+      targetDir,
+      mode: continuousClaudeChoice as "full" | "project",
+      forClaude,
+    });
+    spinner.stop("Continuous Claude configured");
   }
+
+  console.log("");
+
+  const summaryLines = ["✓ AI DevKit setup complete!"];
+  if ((mcpServers as string[]).includes("supabase")) {
+    summaryLines.push("");
+    summaryLines.push("Don't forget to set SUPABASE_ACCESS_TOKEN");
+  }
+  printSuccessBox(summaryLines);
 }

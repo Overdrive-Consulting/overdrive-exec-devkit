@@ -21,7 +21,7 @@ async function main() {
     case "help":
     case "--help":
     case "-h":
-      printBanner();
+      await printBanner();
       console.log("Usage: adk <command>\n");
       console.log("Commands:");
       console.log("  init     Bootstrap AI tools into current project (default)");

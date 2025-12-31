@@ -21,9 +21,12 @@
   "dependencies": {
     "@clack/core": "^0.5.0",
     "@clack/prompts": "^0.11.0",
+    "boxen": "^8.0.1",
+    "chalk-animation": "^2.0.3",
     "consola": "^3.4.2",
     "execa": "^9.6.1",
     "gradient-string": "^3.0.0",
+    "nanospinner": "^1.2.2",
     "picocolors": "^1.1.1",
     "tinyglobby": "^0.2.15",
     "zod": "^4.3.2"

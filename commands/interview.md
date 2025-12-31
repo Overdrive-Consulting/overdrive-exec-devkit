@@ -1,5 +1,5 @@
 ---
-description: Interview me about the plan
+description: conduct detailed interview about a feature plan
 argument-hint: [plan-file]
 ---
 
