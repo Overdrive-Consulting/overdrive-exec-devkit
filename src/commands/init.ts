@@ -8,6 +8,7 @@ import { installOpencode } from "../installers/opencode";
 import { installBeads } from "../installers/beads";
 import { getRuleOptions, installRules } from "../installers/rules";
 import { installContinuousClaude } from "../installers/continuous-claude";
+import { installSafetyNet } from "../installers/safety-net";
 
 export async function runInit() {
   await printBanner();
@@ -187,7 +188,22 @@ export async function runInit() {
     continuousClaudeChoice = ccChoice as string;
   }
 
-  // Step 8: Confirmation
+  // Step 8: Safety Net (Claude Code only)
+  let safetyNetChoice = false;
+  if (forClaude) {
+    const snChoice = await p.confirm({
+      message: "Set up Safety Net (blocks destructive commands)? [Claude Code only]",
+    });
+
+    if (p.isCancel(snChoice)) {
+      p.cancel("Setup cancelled");
+      process.exit(0);
+    }
+
+    safetyNetChoice = snChoice;
+  }
+
+  // Step 9: Confirmation
   console.log("");
   printInfo("Summary:");
   console.log(pc.dim("  Target: ") + targetDir);
@@ -207,6 +223,7 @@ export async function runInit() {
   console.log(pc.dim("  Beads: ") + beadsChoice);
   if (forClaude) {
     console.log(pc.dim("  Continuous Claude: ") + continuousClaudeChoice);
+    console.log(pc.dim("  Safety Net: ") + (safetyNetChoice ? "yes" : "no"));
   }
   console.log("");
 
@@ -304,6 +321,17 @@ export async function runInit() {
       forClaude,
     });
     spinner.stop("Continuous Claude configured");
+  }
+
+  // Install safety-net
+  if (safetyNetChoice && forClaude) {
+    spinner.start("Setting up Safety Net...");
+    await installSafetyNet({
+      targetDir,
+      install: safetyNetChoice,
+      forClaude,
+    });
+    spinner.stop("Safety Net configured");
   }
 
   console.log("");
