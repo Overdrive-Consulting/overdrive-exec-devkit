@@ -99,7 +99,7 @@ export async function installSafetyNet(options: InstallSafetyNetOptions): Promis
     }
 
     const root = getProjectRoot();
-    const safetyNetDir = join(root, "claude-code-safety-net");
+    const safetyNetDir = join(root, "assets", "safety-net");
 
     // Copy scripts
     const scriptsDir = join(safetyNetDir, "scripts");

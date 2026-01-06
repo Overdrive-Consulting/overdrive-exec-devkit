@@ -157,27 +157,10 @@ export async function runInit() {
   }
 
   // Step 7: Continuous Claude setup (Claude Code only)
-  let continuousClaudeChoice: string = "skip";
+  let continuousClaudeChoice = false;
   if (forClaude) {
-    const ccChoice = await p.select({
-      message: "Set up Continuous Claude (session continuity & advanced skills)? [Claude Code only]",
-      options: [
-        {
-          value: "full",
-          label: "Full Setup (Recommended)",
-          hint: "Global install + project init (thoughts/, ledgers, handoffs)",
-        },
-        {
-          value: "project",
-          label: "Project Only",
-          hint: "Just init project structure (requires global install)",
-        },
-        {
-          value: "skip",
-          label: "Skip",
-          hint: "Don't set up Continuous Claude",
-        },
-      ],
+    const ccChoice = await p.confirm({
+      message: "Set up Continuous Claude (session continuity & handoffs)? [Claude Code only]",
     });
 
     if (p.isCancel(ccChoice)) {
@@ -185,7 +168,7 @@ export async function runInit() {
       process.exit(0);
     }
 
-    continuousClaudeChoice = ccChoice as string;
+    continuousClaudeChoice = ccChoice;
   }
 
   // Step 8: Safety Net (Claude Code only)
@@ -221,7 +204,7 @@ export async function runInit() {
   }
   printInfo(`  Beads: ${beadsChoice}`);
   if (forClaude) {
-    printInfo(`  Continuous Claude: ${continuousClaudeChoice}`);
+    printInfo(`  Continuous Claude: ${continuousClaudeChoice ? "yes" : "no"}`);
     printInfo(`  Safety Net: ${safetyNetChoice ? "yes" : "no"}`);
   }
 
@@ -310,11 +293,11 @@ export async function runInit() {
   }
 
   // Install continuous-claude
-  if (continuousClaudeChoice !== "skip" && forClaude) {
+  if (continuousClaudeChoice && forClaude) {
     spinner.start("Setting up Continuous Claude...");
     await installContinuousClaude({
       targetDir,
-      mode: continuousClaudeChoice as "full" | "project",
+      install: continuousClaudeChoice,
       forClaude,
     });
     spinner.stop("Continuous Claude configured");

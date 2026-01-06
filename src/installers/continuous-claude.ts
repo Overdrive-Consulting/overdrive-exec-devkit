@@ -1,102 +1,97 @@
 import { join } from "path";
+import { readdirSync, statSync, readFileSync } from "fs";
 import { execa } from "execa";
-import { fileExists, ensureDir } from "../utils/files";
+import { copyFile, fileExists, ensureDir, getProjectRoot, writeFile } from "../utils/files";
 import { printSuccess, printInfo, printWarning } from "../utils/ui";
 
 export interface InstallContinuousClaudeOptions {
   targetDir: string;
-  mode: "full" | "project" | "skip";
+  install: boolean;
   forClaude: boolean;
 }
 
-async function checkContinuousClaudeInstalled(): Promise<boolean> {
-  const globalSkillsDir = join(process.env.HOME || "~", ".claude", "skills");
-  return fileExists(join(globalSkillsDir, "continuity_ledger", "SKILL.md"));
-}
+/**
+ * Recursively copy a directory
+ */
+function copyDir(src: string, dest: string) {
+  ensureDir(dest);
+  const entries = readdirSync(src);
 
-async function runGlobalInstall(): Promise<boolean> {
-  const continuousClaudeDir = join(process.cwd(), "continuous-claude");
-  const installScript = join(continuousClaudeDir, "install-global.sh");
+  for (const entry of entries) {
+    const srcPath = join(src, entry);
+    const destPath = join(dest, entry);
+    const stat = statSync(srcPath);
 
-  if (!fileExists(installScript)) {
-    printWarning("continuous-claude not found in current directory");
-    printInfo("Clone it first: git clone <continuous-claude-repo>");
-    return false;
-  }
-
-  try {
-    printInfo("Running continuous-claude global install...");
-    await execa("bash", [installScript, "--yes"], {
-      stdio: "inherit",
-      cwd: continuousClaudeDir,
-    });
-    return true;
-  } catch (error) {
-    printWarning("Global install failed - run manually: ./continuous-claude/install-global.sh");
-    return false;
-  }
-}
-
-async function runProjectInit(targetDir: string): Promise<boolean> {
-  // Check if global install exists
-  const globalScripts = join(process.env.HOME || "~", ".claude", "scripts");
-  const initScript = join(globalScripts, "init-project.sh");
-
-  // Also check in the continuous-claude directory
-  const localScript = join(process.cwd(), "continuous-claude", "init-project.sh");
-
-  const scriptToUse = fileExists(initScript) ? initScript : localScript;
-
-  if (!fileExists(scriptToUse)) {
-    printWarning("init-project.sh not found");
-    printInfo("Run global install first, or use: ./continuous-claude/init-project.sh");
-    return false;
-  }
-
-  try {
-    // Create the directory structure manually to avoid interactive prompts
-    ensureDir(join(targetDir, "thoughts", "ledgers"));
-    ensureDir(join(targetDir, "thoughts", "shared", "handoffs"));
-    ensureDir(join(targetDir, "thoughts", "shared", "plans"));
-    ensureDir(join(targetDir, ".claude", "cache", "artifact-index"));
-
-    printSuccess("Created thoughts/ directory structure");
-    return true;
-  } catch (error) {
-    printWarning("Project init failed");
-    return false;
+    if (stat.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      copyFile(srcPath, destPath);
+    }
   }
 }
 
 export async function installContinuousClaude(options: InstallContinuousClaudeOptions): Promise<boolean> {
-  const { targetDir, mode, forClaude } = options;
+  const { targetDir, install, forClaude } = options;
 
-  if (mode === "skip" || !forClaude) {
+  if (!install || !forClaude) {
     return true;
   }
 
-  const isInstalled = await checkContinuousClaudeInstalled();
+  const root = getProjectRoot();
+  const assetsDir = join(root, "assets", "continuous-claude");
+  const projectClaudeDir = join(targetDir, ".claude");
 
-  if (mode === "full") {
-    if (!isInstalled) {
-      const success = await runGlobalInstall();
-      if (!success) return false;
-    } else {
-      printInfo("Continuous Claude already installed globally");
+  try {
+    // Copy skills to project .claude/skills/
+    const skillsDir = join(assetsDir, "skills");
+    if (fileExists(skillsDir)) {
+      const destSkillsDir = join(projectClaudeDir, "skills");
+      copyDir(skillsDir, destSkillsDir);
+      printSuccess("Copied continuity skills to .claude/skills/");
     }
 
-    // Always run project init
-    return await runProjectInit(targetDir);
-  }
-
-  if (mode === "project") {
-    if (!isInstalled) {
-      printWarning("Global install not found - run install-global.sh first");
-      return false;
+    // Copy hooks to project .claude/hooks/
+    const hooksDir = join(assetsDir, "hooks");
+    if (fileExists(hooksDir)) {
+      const destHooksDir = join(projectClaudeDir, "hooks");
+      copyDir(hooksDir, destHooksDir);
+      printSuccess("Copied continuity hooks to .claude/hooks/");
     }
 
-    return await runProjectInit(targetDir);
-  }
+    // Create thoughts/ directory structure
+    ensureDir(join(targetDir, "thoughts", "ledgers"));
+    ensureDir(join(targetDir, "thoughts", "shared", "handoffs"));
+    ensureDir(join(targetDir, "thoughts", "shared", "plans"));
+    ensureDir(join(projectClaudeDir, "cache", "artifact-index"));
+    printSuccess("Created thoughts/ directory structure");
 
-  return true;
+    // Initialize SQLite database if sqlite3 is available
+    const schemaFile = join(assetsDir, "scripts", "artifact_schema.sql");
+    const dbPath = join(projectClaudeDir, "cache", "artifact-index", "context.db");
+
+    if (fileExists(schemaFile) && !fileExists(dbPath)) {
+      try {
+        const schema = readFileSync(schemaFile, "utf-8");
+        await execa("sqlite3", [dbPath], { input: schema, cwd: targetDir });
+        printSuccess("Initialized artifact-index database");
+      } catch {
+        printInfo("SQLite not available - database will be created on first use");
+      }
+    }
+
+    // Add to .gitignore
+    const gitignorePath = join(targetDir, ".gitignore");
+    if (fileExists(gitignorePath)) {
+      const content = readFileSync(gitignorePath, "utf-8");
+      if (!content.includes(".claude/cache/")) {
+        writeFile(gitignorePath, content + "\n# Continuous Claude cache\n.claude/cache/\n");
+        printSuccess("Added .claude/cache/ to .gitignore");
+      }
+    }
+
+    return true;
+  } catch (error) {
+    printWarning("Continuous Claude installation failed");
+    return false;
+  }
 }

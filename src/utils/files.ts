@@ -36,13 +36,16 @@ export function writeJson(path: string, data: unknown) {
 
 export function getProjectRoot(): string {
   // Find the ai-devkit root by looking for package.json with name "ai-devkit"
-  let dir = import.meta.dir;
+  // Use import.meta.url for Node compatibility (import.meta.dir is Bun-only)
+  const currentFile = new URL(import.meta.url).pathname;
+  let dir = dirname(currentFile);
+
   while (dir !== "/") {
     const pkgPath = join(dir, "package.json");
     if (existsSync(pkgPath)) {
       try {
         const pkg = readJson<{ name: string }>(pkgPath);
-        if (pkg.name === "ai-devkit") {
+        if (pkg.name === "@enteroverdrive/ai-devkit") {
           return dir;
         }
       } catch {

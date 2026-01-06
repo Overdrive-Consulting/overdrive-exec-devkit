@@ -256,7 +256,7 @@ uv run script.py     # Run with dependencies
 
 ## Safety Net (Claude Code Only)
 
-The devkit includes **Claude Code Safety Net** — a protection layer that blocks destructive commands before they execute. This feature is automatically installed when you select Claude Code during `adk init`.
+The devkit includes **[Claude Code Safety Net](https://github.com/kenryu42/claude-code-safety-net)** by [kenryu42](https://github.com/kenryu42) — a protection layer that blocks destructive commands before they execute. This feature is automatically installed when you select Claude Code during `adk init`.
 
 ### Why It Exists
 
@@ -373,7 +373,7 @@ bun run build
 
 ### Continuous Claude
 
-Session continuity for Claude Code with:
+Based on **[Continuous Claude v2](https://github.com/parcadei/Continuous-Claude-v2)** — session continuity for Claude Code with:
 
 - `thoughts/` directory for persistent context
 - Ledgers for tracking work
