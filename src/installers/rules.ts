@@ -84,10 +84,10 @@ export function installRules(options: InstallRulesOptions) {
 
     for (const rule of rules) {
       const src = join(root, "rules", `${rule}.md`);
-      const dest = join(cursorRulesDir, `${rule}.md`);
+      const dest = join(cursorRulesDir, `${rule}.mdc`);
 
       if (fileExists(dest)) {
-        printInfo(`Skipping Cursor rule ${rule}.md (already exists)`);
+        printInfo(`Skipping Cursor rule ${rule}.mdc (already exists)`);
         continue;
       }
 
