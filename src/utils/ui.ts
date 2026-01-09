@@ -60,7 +60,7 @@ export function printSuccessBox(lines: string[]) {
   consola.log(
     boxen(lines.join("\n"), {
       padding: 1,
-      borderStyle: "single",
+      borderStyle: "round",
       borderColor: "green",
     })
   );

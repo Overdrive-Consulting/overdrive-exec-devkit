@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { runInit } from "./commands/init";
 import { runUpdate } from "./commands/update";
