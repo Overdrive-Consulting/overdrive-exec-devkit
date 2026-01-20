@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  copyFileSync,
+  readdirSync,
+  statSync,
+} from "fs";
 import { dirname, join } from "path";
 
 export function ensureDir(path: string) {
@@ -23,6 +31,22 @@ export function writeFile(path: string, content: string) {
 export function copyFile(src: string, dest: string) {
   ensureDir(dirname(dest));
   copyFileSync(src, dest);
+}
+
+export function copyDir(src: string, dest: string) {
+  ensureDir(dest);
+  const entries = readdirSync(src);
+
+  for (const entry of entries) {
+    const srcPath = join(src, entry);
+    const destPath = join(dest, entry);
+
+    if (statSync(srcPath).isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      copyFile(srcPath, destPath);
+    }
+  }
 }
 
 export function readJson<T = unknown>(path: string): T {

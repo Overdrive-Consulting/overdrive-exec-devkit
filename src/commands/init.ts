@@ -1,10 +1,19 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { printBanner, printSuccess, printInfo, printSuccessBox } from "../utils/ui";
+import {
+  printBanner,
+  printSuccess,
+  printInfo,
+  printSuccessBox,
+} from "../utils/ui";
 import { getMcpServerOptions, installMcpServers } from "../installers/mcp";
-import { getCommandOptions, getSkillOptions, installClaude } from "../installers/claude";
-import { installCursor } from "../installers/cursor";
-import { installOpencode } from "../installers/opencode";
+import {
+  getCommandOptions,
+  getSkillOptions,
+  installClaude,
+  installCursor,
+  installOpencode,
+} from "../installers/shared";
 import { installBeads } from "../installers/beads";
 import { getRuleOptions, installRules } from "../installers/rules";
 import { installContinuousClaude } from "../installers/continuous-claude";
@@ -51,7 +60,7 @@ export async function runInit() {
   const mcpOptions = getMcpServerOptions();
   const mcpServers = await p.multiselect({
     message: "Which MCP servers do you want to add?",
-    options: mcpOptions.map(opt => ({
+    options: mcpOptions.map((opt) => ({
       value: opt.value,
       label: opt.label,
       hint: opt.hint,
@@ -64,14 +73,14 @@ export async function runInit() {
     process.exit(0);
   }
 
-  // Step 3: Select skills (if Claude or OpenCode selected)
+  // Step 3: Select skills (if Claude, Cursor, or OpenCode selected)
   let selectedSkills: string[] = [];
-  if (forClaude || forOpencode) {
+  if (forClaude || forCursor || forOpencode) {
     const skillOptions = getSkillOptions();
     if (skillOptions.length > 0) {
       const skills = await p.multiselect({
         message: "Which skills do you want to install?",
-        options: skillOptions.map(opt => ({
+        options: skillOptions.map((opt) => ({
           value: opt.value,
           label: opt.label,
           hint: opt.hint,
@@ -92,7 +101,7 @@ export async function runInit() {
   const commandOptions = getCommandOptions();
   const commands = await p.multiselect({
     message: "Which commands do you want to install?",
-    options: commandOptions.map(opt => ({
+    options: commandOptions.map((opt) => ({
       value: opt.value,
       label: `/${opt.label}`,
       hint: opt.hint,
@@ -113,7 +122,7 @@ export async function runInit() {
   if (ruleOptions.length > 0) {
     const rules = await p.multiselect({
       message: "Which rules do you want to install?",
-      options: ruleOptions.map(opt => ({
+      options: ruleOptions.map((opt) => ({
         value: opt.value,
         label: opt.label,
         hint: opt.hint,
@@ -160,7 +169,8 @@ export async function runInit() {
   let continuousClaudeChoice = false;
   if (forClaude) {
     const ccChoice = await p.confirm({
-      message: "Set up Continuous Claude (session continuity & handoffs)? [Claude Code only]",
+      message:
+        "Set up Continuous Claude (session continuity & handoffs)? [Claude Code only]",
     });
 
     if (p.isCancel(ccChoice)) {
@@ -175,7 +185,8 @@ export async function runInit() {
   let safetyNetChoice = false;
   if (forClaude) {
     const snChoice = await p.confirm({
-      message: "Set up Safety Net (blocks destructive commands)? [Claude Code only]",
+      message:
+        "Set up Safety Net (blocks destructive commands)? [Claude Code only]",
     });
 
     if (p.isCancel(snChoice)) {
@@ -197,7 +208,7 @@ export async function runInit() {
     printInfo(`  Skills: ${selectedSkills.join(", ")}`);
   }
   if (selectedCommands.length > 0) {
-    printInfo(`  Commands: ${selectedCommands.map(c => `/${c}`).join(", ")}`);
+    printInfo(`  Commands: ${selectedCommands.map((c) => `/${c}`).join(", ")}`);
   }
   if (selectedRules.length > 0) {
     printInfo(`  Rules: ${selectedRules.join(", ")}`);
@@ -251,6 +262,7 @@ export async function runInit() {
     installCursor({
       targetDir,
       commands: selectedCommands,
+      skills: selectedSkills,
     });
     spinner.stop("Cursor configured");
   }

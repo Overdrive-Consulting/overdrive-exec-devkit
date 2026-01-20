@@ -1,7 +1,13 @@
 import { join } from "path";
-import { readdirSync, statSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { execa } from "execa";
-import { copyFile, fileExists, ensureDir, getProjectRoot, writeFile } from "../utils/files";
+import {
+  copyDir,
+  fileExists,
+  ensureDir,
+  getProjectRoot,
+  writeFile,
+} from "../utils/files";
 import { printSuccess, printInfo, printWarning } from "../utils/ui";
 
 export interface InstallContinuousClaudeOptions {
@@ -10,27 +16,9 @@ export interface InstallContinuousClaudeOptions {
   forClaude: boolean;
 }
 
-/**
- * Recursively copy a directory
- */
-function copyDir(src: string, dest: string) {
-  ensureDir(dest);
-  const entries = readdirSync(src);
-
-  for (const entry of entries) {
-    const srcPath = join(src, entry);
-    const destPath = join(dest, entry);
-    const stat = statSync(srcPath);
-
-    if (stat.isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      copyFile(srcPath, destPath);
-    }
-  }
-}
-
-export async function installContinuousClaude(options: InstallContinuousClaudeOptions): Promise<boolean> {
+export async function installContinuousClaude(
+  options: InstallContinuousClaudeOptions,
+): Promise<boolean> {
   const { targetDir, install, forClaude } = options;
 
   if (!install || !forClaude) {
@@ -67,7 +55,12 @@ export async function installContinuousClaude(options: InstallContinuousClaudeOp
 
     // Initialize SQLite database if sqlite3 is available
     const schemaFile = join(assetsDir, "scripts", "artifact_schema.sql");
-    const dbPath = join(projectClaudeDir, "cache", "artifact-index", "context.db");
+    const dbPath = join(
+      projectClaudeDir,
+      "cache",
+      "artifact-index",
+      "context.db",
+    );
 
     if (fileExists(schemaFile) && !fileExists(dbPath)) {
       try {
@@ -75,7 +68,9 @@ export async function installContinuousClaude(options: InstallContinuousClaudeOp
         await execa("sqlite3", [dbPath], { input: schema, cwd: targetDir });
         printSuccess("Initialized artifact-index database");
       } catch {
-        printInfo("SQLite not available - database will be created on first use");
+        printInfo(
+          "SQLite not available - database will be created on first use",
+        );
       }
     }
 
@@ -84,7 +79,10 @@ export async function installContinuousClaude(options: InstallContinuousClaudeOp
     if (fileExists(gitignorePath)) {
       const content = readFileSync(gitignorePath, "utf-8");
       if (!content.includes(".claude/cache/")) {
-        writeFile(gitignorePath, content + "\n# Continuous Claude cache\n.claude/cache/\n");
+        writeFile(
+          gitignorePath,
+          content + "\n# Continuous Claude cache\n.claude/cache/\n",
+        );
         printSuccess("Added .claude/cache/ to .gitignore");
       }
     }
